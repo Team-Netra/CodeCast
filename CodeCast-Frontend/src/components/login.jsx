@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Box, Typography, TextField, Button, Link } from "@mui/material";
+import { Box, Typography, TextField, Button, Link, InputAdornment} from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import GoogleIcon from '@mui/icons-material/Google';
 import { Checkbox, FormControlLabel } from "@mui/material";
@@ -17,9 +19,15 @@ const theme = createTheme({
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const api = useApi();
   const navigate = useNavigate();
+
+  const togglePasswordVisibility = (field) => {
+    if (field === "password") setShowPassword(!showPassword);
+    else if (field === "confirmPassword") setShowConfirmPassword(!showConfirmPassword);
+  };
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -144,16 +152,14 @@ const LoginPage = () => {
             <TextField
               id="password"
               label="Password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               variant="outlined"
 
               fullWidth
               value={password}
               onChange={(e) => {setPassword(e.target.value); setLoginError("");}}
               required
-              InputProps={{
-                style: { color: "white" },
-              }}
+              
               InputLabelProps={{
                 style: {
                   color: "#565656 ", height: "50px"
@@ -166,6 +172,25 @@ const LoginPage = () => {
                   "&.Mui-focused fieldset": { borderColor: "white" },
 
                 },
+              }}
+              InputProps={{
+                style: { color: "white" },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Button
+                      onClick={() => togglePasswordVisibility("password")}
+                      sx={{
+                        minWidth: 0,
+                        p: 0,
+                        color: "rgba(86, 86, 86, 1)",
+                        background: "transparent",
+                        "&:hover": { background: "transparent" },
+                      }}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </Button>
+                  </InputAdornment>
+                ),
               }}
             />
           </Box>
