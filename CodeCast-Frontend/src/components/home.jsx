@@ -1,18 +1,47 @@
 import React, { useState } from "react";
-import { Box, Typography, IconButton, Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from "@mui/material";
+import { Box, Typography, IconButton, Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions, InputAdornment, Fade } from "@mui/material";
+
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AddIcon from '@mui/icons-material/Add';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'; 
+import Visibility from '@mui/icons-material/Visibility';       
+import VisibilityOff from '@mui/icons-material/VisibilityOff'; 
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+
 import socket from "../api/socket.js"
 import logo from "../assets/logo.svg"
 import useApi from "../hooks/useApi.js";
 const HomePage = () => {
-  const [openPopup, setOpenPopup] = useState(false);
-  const [openPop, setOpenPop] = useState(false);
+  const [openPopup, setOpenPopup] = useState(false); //Create Modal
+  const [openPop, setOpenPop] = useState(false); //Join Modal
   const [roomUrl, setRoomUrl] = useState("");
   const [cc_pin, setcc_pin] = useState("");
   const [password, setPassword] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const [copySuccess, setCopySuccess] = useState(false);
+
   const api = useApi();
+
+  const handleOpenCreate = () => {
+    setcc_pin(""); 
+    setPassword("");
+    setRoomUrl("");
+    setShowPassword(false);
+    setCopySuccess(false);
+    generateRoomUrl(); 
+    setOpenPopup(true);
+  };
+
+  const handleOpenJoin = () => {
+    setcc_pin(""); 
+    setPassword("");
+    setShowPassword(false);
+    setOpenPop(true);
+  };
+
   const generateRoomUrl = () => {
     const roomId = Math.random().toString(36).slice(2, 10);
     setcc_pin(roomId) // Generate unique room ID
@@ -20,16 +49,35 @@ const HomePage = () => {
     setRoomUrl(url);
   };
 
+  const handleCopyDetails = () => {
+    // 1. Define the professional message
+    const message = `Join my CodeCast Room for a live collaborative coding session!
+
+Room Details:
+CC Pin: ${cc_pin}
+Password: ${password || "(No password set)"}
+Link: ${roomUrl}
+
+Click the link to join and collaborate in real time.`;
+
+    navigator.clipboard.writeText(message);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
+
   const joinroom = () => {
 
     if (!socket) {
       console.log("socket is not connected");
+      return;
     }
     if (!cc_pin) {
       console.log("cc_pin does not exists");
+      return;
     }
     if (!password) {
       console.log("Password is not set");
+      return;
     }
 
     api
@@ -55,250 +103,341 @@ const HomePage = () => {
         console.log(error)
 
       })
-    // axios.post('/room/addUserToRoom', {
-    //   cc_pin,
-    //   password
-    // }).then((res) => {
-    //   console.log(res);
-    //   if (res.status == 200 || res.status == 201) {
-    //     setPassword("");
-    //     setcc_pin("")
-    //     console.log("Room credentials coorect, the user can navigate")
-    //     const url = `${window.location.origin}/room/${cc_pin}`; // Construct the full URL
-    //     setRoomUrl(url);
-    //     localStorage.setItem("creater", false)
-
-    //     setOpenPopup(false);
-    //     if (url) {
-    //       // console.log("hiii")
-    //       window.open(url, "_blank");
-    //     }
-
-    //   }
-    // }).catch((error) => {
-    //   console.log(error)
-    // })
   }
 
   const createroom = () => {
     console.log(socket)
     if (!socket) {
       console.log("socket is not connected");
+      return;
     }
     if (!cc_pin) {
       console.log("cc_pin does not exists");
+      return;
     }
     if (!password) {
       console.log("Password is not set");
+      return;
     }
+    // We save the pin in a temporary variable before sending the request. 
+    // This ensures that even if the state clears instantly, our URL generation uses the correct ID.
+    const currentPin = cc_pin;
+
     api.post('/room/create-room', {
       cc_pin, password
     }).then((res) => {
       console.log(res);
       if (res.status == 200 || res.status == 201) {
-        console.log("Room successfully created, the user can navigate")
+        console.log("Room successfully created, the user can navigate");
+        const url = `${window.location.origin}/room/${currentPin}`;
+
         setPassword("");
-        setcc_pin("")
-        const url = `${window.location.origin}/room/${cc_pin}`;
+        setcc_pin("");
         setRoomUrl(url);
         setOpenPopup(false);
         localStorage.setItem("creater", true)
         if (url) {
-          console.log("hiii")
-          window.open(url, "_blank");
+          window.open(url, "_blank"); //to open in another web page
+          // window.location.href = url; //to open in the same tab
         }
 
       }
     })
       .catch((error) => {
-        console.log(error)
-
-      })
-
-    // await axios.post('/room/create-room', {
-    //   cc_pin,
-    //   password
-    // }).then((res) => {
-    //   console.log(res);
-    //   if (res.status == 200 || res.status == 201) {
-    //     console.log("Room successfully created, the user can navigate")
-    //     setPassword("");
-    //     setcc_pin("")
-    //     const url = `${window.location.origin}/room/${cc_pin}`;
-    //     setRoomUrl(url);
-    //     setOpenPopup(false);
-    //     localStorage.setItem("creater", true)
-    //     if (url) {
-    //       console.log("hiii")
-    //       window.open(url, "_blank");
-    //     }
-
-    //   }
-    // }).catch((error) => {
-    //   console.log(error)
-    // })
+        console.log(error);
+      });
   }
+
+  const darkInputStyle = {
+    "& .MuiInputBase-input": {
+      color: "white",
+      paddingLeft: "15px",
+      fontSize: "1.1rem",
+      "&.Mui-disabled": {
+        WebkitTextFillColor: "white", 
+        color: "white",
+        opacity: 1
+      }
+     },
+    "& .MuiInputLabel-root": { color: "#aaa"},
+    "& .MuiInputLabel-root.Mui-focused": { color: "#d500f9" }, // Purple focus
+    "& .MuiOutlinedInput-root": {
+      "& fieldset": { borderColor: "#444" },
+      "&:hover fieldset": { borderColor: "white" },
+      "&.Mui-focused fieldset": { borderColor: "#d500f9" }, // Purple border
+      backgroundColor: "rgba(255, 255, 255, 0.05)", // Slight background for input box
+      height: "40px",
+      width: "400px"
+    }
+  };
 
   return (
     <Box
       sx={{
-        position: "fixed", // Fix the page in place
-        top: 0,
-        left: 0,
-        width: "100vw",
+        width: "100%",
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: "rgba(18, 18, 18, 1)",
+        background: "#121212", // Standard Dark Mode background
         color: "white",
-        overflow: "hidden", // Prevent scrolling
+        overflow: "hidden", //Prevent scrolling
+        margin: 0,
+        padding: 0
       }}
     >
+      {/* --- HEADER SECTION --- */}
       <Box
         sx={{
-          position: "relative", // Set position relative for child elements
-          width: "100vw",
-          height: "60px",
-          background: "rgba(38, 38, 38, 1)",
+          flexShrink: 0,
+          height: "65px",
+          background: "#1e1e1e", // Slightly lighter for contrast
           display: "flex",
-          alignItems: "center", // Vertically center the content
-          paddingLeft: "10px", // Add some padding to avoid touching the edges
+          alignItems: "center",
+          justifyContent: "space-between", // Pushes items to edges
+          padding: "0 20px", // Breathing room
+          boxSizing: "border-box", // Prevents scrollbars from padding
+          borderBottom: "1px solid #191919ff"
         }}
       >
-        <IconButton sx={{ position: "absolute", right: 100, color: "white", transform: "scale(1.5)" }}>
-          <AccountCircleIcon />
-        </IconButton>
-        <IconButton sx={{ position: "absolute", right: 50, color: "white", transform: "scale(1.5)" }}>
-          <SettingsIcon />
-        </IconButton>
-        <Box sx={{ p: 2 }}>
-          <img src={logo} alt="Logo" style={{ height: 40 }} />
+        <img src={logo} alt="CodeCast" style={{ height: 45 }} />
+
+        {/* Right side icons */}
+        <Box>
+           <IconButton sx={{ color: "white", marginRight: 1 }}>
+             <SettingsIcon sx={{ fontSize: 32 }} />
+           </IconButton>
+           <IconButton sx={{ color: "white" }}>
+             <AccountCircleIcon sx={{ fontSize: 32 }} />
+           </IconButton>
         </Box>
       </Box>
-      <Box
-        sx={{
-          position: "relative", // Set position relative for child elements
-          width: "100vw",
-          height: "40px",
-          background: "rgba(18, 18, 18, 1)",
-          display: "flex",
-          alignItems: "left",
-          paddingLeft: "15px",
-          paddingTop: "10px",
-          paddingBottom: "10px",
-        }}>
-        <Button
-          onClick={() => setOpenPop(true)}
-          type="submit"
-          variant="contained"
 
+      {/* --- MAIN CONTENT --- */}
+      <Box 
+        sx={{ 
+          flex: 1,            // Takes up all remaining space
+          overflowY: "auto",  // Allows scrolling only in this area
+          p: 4,               // Padding around content
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start", // Aligns button to Left
+          gap: 5,              // Gap between Button and Grid
+          paddingLeft: "32px"
+        }}
+      >
+        {/* JOIN BUTTON */}
+        <Button
+          onClick={handleOpenJoin}
+          variant="contained"
           sx={{
-            padding: 1,
-            fontWeight: "bold",
-            width: "150px",
-            bgcolor: "purple",
+            background: "linear-gradient(45deg, #A50EB2 70%)", 
             borderRadius: "50px",
-            ":hover": { bgcolor: "darkorchid" },
+            padding: "12px 40px",
+            fontWeight: "bold",
+            textTransform: "none",
+            fontSize: "1.2rem",
+            boxShadow: "0 4px 15px rgba(213, 0, 249, 0.4)"
           }}
         >
           Join Room
         </Button>
-      </Box>
-      <Box
-        sx={{
-          width: "100vw",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          background: "rgba(18, 18, 18, 1)",
-          padding: 2
-        }}>
-        <Box
+
+        {/* --- ROOMS GRID CONTAINER --- */}
+        {/* This container will hold Create Room + All Future Rooms in a row */}
+        <Box 
           sx={{
-            position: "relative", // Set position relative for child elements
-            width: "150px",
-            height: "150px",
-            backgroundColor: "transparent",
-            border: "2px dashed #565656",
-            borderRadius: 3,
-            boxShadow: 3,
             display: "flex",
-            justifyContent: "center", // Center horizontally
-            alignItems: "center", // Center vertically
-          }}>
-          <IconButton sx={{ position: "absolute", top: 40, color: "white", transform: "scale(1.2)" }}>
-            <AddIcon />
-          </IconButton>
-          <Button
-            onClick={() => {
-              setOpenPopup(true);
-              generateRoomUrl()
-            }}
-            sx={{
-              color: "white",
-              fontFamily: "Arial, sans-serif",
-              fontweight: "normal",
-              textTransform: "none",
-              top: 20
-            }}>
-            Create Room
-          </Button>
+            flexWrap: "wrap", 
+            gap: 4,           // Space between cards
+            width: "100%"
+          }}
+        >
+            {/* DASHED CREATE CARD */}
+            <Box
+              onClick={handleOpenCreate}
+              sx={{
+                width: "200px",      
+                height: "200px",     
+                border: "3px dashed #3a3a3a",
+                borderRadius: "20px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                cursor: "pointer",
+                backgroundColor: "transparent",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  borderColor: "#ce93d8",
+                  backgroundColor: "rgba(255,255,255,0.03)",
+                  transform: "translateY(-5px)" 
+                }
+              }}
+            >
+              <AddIcon sx={{ fontSize: 50, color: "white", mb: 1 }} />
+              <Typography variant="h6" color="gray">Create Room</Typography>
+            </Box>
         </Box>
       </Box>
 
-
-      <Dialog
-        open={openPopup}
+      {/* --- CREATE ROOM MODAL --- */}
+      <Dialog 
+        open={openPopup} 
         onClose={() => setOpenPopup(false)}
         slotProps={{
           paper: {
-            sx: {
-              // bgcolor: '#2a2a2a',
-              // color: 'white',
-              padding: 2,
-              borderRadius: 2,
+            sx: { 
+              backgroundColor: "#222", 
+              color: "white", 
+              width: "450px", 
+              border: "1px solid #444", 
+              borderRadius: "12px" 
             }
           }
-        }}>
-        <DialogTitle>Create Room</DialogTitle>
-        <DialogContent>
-          <TextField sx={{ input: { color: "white" } }} label="CC Pin" fullWidth margin="dense" variant="outlined" value={cc_pin} disabled />
-          <TextField label="Password" variant="outlined" fullWidth margin="dense" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <Box sx={{ display: "flex", height: "50px", border: "1px solid", borderColor: "rgba(150, 149, 149, 1)", borderRadius: 1 }}>
-            <Typography variant="h7" sx={{ paddingTop: "10px", paddingLeft: "10px", color: "rgba(131, 131, 131, 1)" }}>
-              Link
-            </Typography>
-            {roomUrl && (
-              <Typography component="a" href={roomUrl} target="_blank" sx={{ paddingLeft: "10px", paddingTop: "10px", color: "cyan", textDecoration: "none", align: "center" }}>
-                {roomUrl}
-              </Typography>
-            )}
-          </Box>
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: "bold", fontSize: "1.2rem", paddingBottom: 0 }}>CREATE NEW ROOM</DialogTitle>
+        <DialogContent sx={{ mt: 1 }}>
+          
+          {/* 1. CC PIN INPUT */}
+          <Typography variant="body2" sx={{ color: "#aaa", mb: 0.5, mt: 2 }}>
+            CC Pin
+          </Typography>
+          <TextField 
+            fullWidth 
+            variant="outlined" 
+            value={cc_pin} 
+            disabled 
+            sx={darkInputStyle}
+          />
+
+          {/* 2. PASSWORD INPUT */}
+          <Typography variant="body2" sx={{ color: "#aaa", mb: 0.5, mt: 2 }}>
+            Set Password
+          </Typography>
+          <TextField 
+            variant="outlined" 
+            fullWidth 
+            type={showPassword ? "text" : "password"} 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            sx={darkInputStyle} 
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(!showPassword)} sx={{ color: "#aaa" }}>
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }
+            }}
+          />
+
+          {/* 3. LINK INPUT */}
+          <Typography variant="body2" sx={{ color: "#aaa", mb: 0.5, mt: 2 }}>
+            Link
+          </Typography>
+          <TextField 
+            fullWidth 
+            variant="outlined" 
+            value={roomUrl} 
+            disabled 
+            sx={darkInputStyle}
+          />
+
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenPopup(false)} color="secondary">
-            Cancel
+
+        <DialogActions sx={{ p: 3, pt: 2, alignItems: "center" }}>
+          <Button onClick={() => setOpenPopup(false)} sx={{ color: "#aaa", fontWeight: "bold", marginRight: "auto" }}>
+            CANCEL
           </Button>
-          <Button onClick={createroom} color="primary" variant="contained">
-            Create
+          <Box sx={{ position: "relative", mr: 2 }}>
+            <IconButton 
+              onClick={handleCopyDetails} 
+              sx={{ 
+                color: copySuccess ? "#ce93d8" : "#ce93d8", 
+                border: "1px solid #444",
+                borderRadius: "8px",
+                padding: "8px"
+              }}
+              title="Copy Room Details"
+            >
+              {copySuccess ? <CheckCircleIcon /> : <ContentCopyIcon />}
+            </IconButton>
+            
+            {/* "Copied" Tooltip that fades in/out */}
+            <Fade in={copySuccess}>
+              <Typography variant="caption" sx={{ color: "#ce93d8", position: "absolute", top: -25, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}>
+                Copied!
+              </Typography>
+            </Fade>
+          </Box>
+          <Button 
+            onClick={createroom} 
+            variant="contained" 
+            sx={{ 
+              bgcolor: "#d500f9", 
+              fontWeight: "bold", 
+              padding: "8px 25px", 
+              "&:hover": { bgcolor: "#aa00c7" } 
+            }}
+          >
+            CREATE
           </Button>
         </DialogActions>
       </Dialog>
 
 
-      <Dialog open={openPop} onClose={() => setOpenPop(false)}>
-        <DialogTitle>Join Room</DialogTitle>
-        <DialogContent>
+      {/* --- JOIN ROOM MODAL --- */}
+      <Dialog 
+        open={openPop} 
+        onClose={() => setOpenPop(false)}
+        slotProps={{
+          paper: {
+            sx: { backgroundColor: "#222", color: "white", width: "450px",height: "330px", border: "1px solid #444", borderRadius: "12px" }
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: "bold", fontSize: "1.2rem", paddingBottom: 0 }}>JOIN ROOM</DialogTitle>
+        <DialogContent sx={{ mt: 1 }}>
+          
+          <Typography variant="body2" sx={{ color: "#aaa", mb: 0.5, mt: 2 }}>Enter CC Pin</Typography>
+          <TextField 
+            fullWidth variant="outlined" 
+            placeholder=" "
+            value={cc_pin} onChange={(e) => setcc_pin(e.target.value)} 
+            sx={darkInputStyle}
+            
+          />
 
-          <TextField label="Enter CC Pin" fullWidth margin="dense" value={cc_pin} onChange={(e) => { setcc_pin(e.target.value) }} />
-          <TextField label="Enter Password" fullWidth margin="dense" type="password" value={password} onChange={(e) => { setPassword(e.target.value) }} />
+          <Typography variant="body2" sx={{ color: "#aaa", mb: 0.5, mt: 2 }}>Enter Password</Typography>
+          <TextField 
+            fullWidth variant="outlined" 
+            placeholder=" "
+            type={showPassword ? "text" : "password"} 
+            value={password} onChange={(e) => setPassword(e.target.value)} 
+            sx={darkInputStyle}
+            slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton onClick={() => setShowPassword(!showPassword)} sx={{ color: "#aaa" }}>{showPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }}
+          />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenPop(false)} color="secondary">
-            Cancel
+
+        <DialogActions sx={{ p: 3, pt: 2 }}>
+          <Button onClick={() => setOpenPop(false)} sx={{ color: "#aaa", fontWeight: "bold", marginRight: 1 }}>
+            CANCEL
           </Button>
-          <Button onClick={joinroom} color="primary" variant="contained">
-            Join
+          <Button 
+            onClick={joinroom} 
+            variant="contained" 
+            sx={{ 
+              bgcolor: "#d500f9", 
+              fontWeight: "bold", 
+              padding: "8px 25px",
+              "&:hover": { bgcolor: "#aa00c7" }
+            }}
+          >
+            JOIN
           </Button>
         </DialogActions>
       </Dialog>
