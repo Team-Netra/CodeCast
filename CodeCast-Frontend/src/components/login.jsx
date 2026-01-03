@@ -17,6 +17,7 @@ const theme = createTheme({
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
   const api = useApi();
   const navigate = useNavigate();
 
@@ -42,7 +43,13 @@ const LoginPage = () => {
           alert("This email is already registered. Please log in or use a different email.");
         } else {
           console.error("login failed:", error);
-          alert("Login failed. Invalid credentials");
+          // alert("Login failed. Invalid credentials");
+          if (error.response) {
+          // backend-sent error message
+            setLoginError(error.response.data?.message || "Invalid email or password");
+          } else {
+            setLoginError("Something went wrong. Please try again.");
+          }
         }
       })
 
@@ -142,7 +149,7 @@ const LoginPage = () => {
 
               fullWidth
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {setPassword(e.target.value); setLoginError("");}}
               required
               InputProps={{
                 style: { color: "white" },
@@ -162,6 +169,14 @@ const LoginPage = () => {
               }}
             />
           </Box>
+
+          {loginError && (
+            <p style={{ color: "red", fontSize: "17px", marginTop: "5px", fontWeight: "bold", textAlign: "left"}}>
+              {loginError}
+            </p>
+          )}
+
+
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
             <FormControlLabel
               control={
