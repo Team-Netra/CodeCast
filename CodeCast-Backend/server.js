@@ -11,7 +11,8 @@ import { createroom, addusertoroom } from "./controllers/room.controller.js";
 import jwt from "jsonwebtoken"
 
 import userRouter from "./routes/user.routes.js";
-import roomRouter from "./routes/room.routes.js"
+import roomRouter from "./routes/room.routes.js";
+import fileRouter from "./routes/file.routes.js";
 // import { Socket } from "node:dgram";
 
 
@@ -31,6 +32,7 @@ app.use(express.static("public"))
 
 app.use("/users", userRouter)
 app.use("/room", roomRouter)
+app.use("/files", fileRouter);
 
 app.get("/", (req, res) => {
     res.send("Server is alive and kicking. Unlike your patience.")

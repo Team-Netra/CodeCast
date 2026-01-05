@@ -209,4 +209,4 @@ const getRoomByPin = asyncHandler(async (req, res) => {
     );
 });
 
-export { createroom, addusertoroom }
+export { createroom, addusertoroom, getRoomByPin }

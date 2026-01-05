@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { Box, IconButton, Typography, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { useParams, useNavigate } from "react-router-dom";
+import { Box, IconButton, Typography, FormControl, InputLabel, Select, MenuItem, CircularProgress, Drawer, List, ListItem, ListItemButton, ListItemText, Divider } from "@mui/material";
 import CodeMirror from "@uiw/react-codemirror";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { javascript } from "@codemirror/lang-javascript";
@@ -21,6 +21,7 @@ import logo from "../assets/logo.svg"
 const DRAWER_WIDTH = 240;
 
 const RoomPage = () => {
+  const navigate = useNavigate(); // ADD THIS LINE
   const [iscreater, setisCreater] = useState(false)
   const { id } = useParams(); // Get the room ID from URL - THIS IS CCPIN
   const [code, setCode] = useState(""); // Store the code
@@ -69,48 +70,55 @@ const RoomPage = () => {
 
   // Fetch room files on mount
   useEffect(() => {
-    const fetchRoomData = async () => {
-      try {
-        setIsLoading(true);
+  const fetchRoomData = async () => {
+    try {
+      setIsLoading(true);
+
+      // 1. Get room data (including the 'directories' array) by cc_pin
+      const roomResponse = await axiosInstance.get(`/room/by-pin/${id}`);
+      const room = roomResponse.data.data;
+      setRoomData(room);
+
+      // 2. Handle File Loading
+      // We check if directories are already populated in the room object
+      if (room.directories && room.directories.length > 0) {
+        setFiles(room.directories);
         
-        // Get the room data by cc_pin
-        const roomResponse = await axiosInstance.get(`/api/v1/rooms/by-pin/${id}`);
-        
-        const roomId = roomResponse.data.data._id;
-        setRoomData(roomResponse.data.data);
-        
-        // Fetch files for this room
-        const filesResponse = await axiosInstance.get(`/api/v1/files/room/${roomId}`);
-        
+        // Load the content of the FIRST file using its specific File ID
+        await loadFile(room.directories[0]._id); 
+      } else {
+        // Fallback: If directories aren't populated, fetch them using the Room's MongoDB _id
+        const filesResponse = await axiosInstance.get(`/room/${room._id}/all-files`);
         const fetchedFiles = filesResponse.data.data.files;
         setFiles(fetchedFiles);
-        // Load the first file by default
+
         if (fetchedFiles.length > 0) {
           await loadFile(fetchedFiles[0]._id);
         }
-      } catch (error) {
-        console.error("Error fetching room data:", error);
-        if (error.response?.status === 403) {
-          alert("You are not a member of this room");
-          navigate('/home');
-        } else if (error.response?.status === 404) {
-          alert("Room not found");
-          navigate('/home');
-        } else {
-          alert("Failed to load room files");
-        }
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching room data:", error);
+      if (error.response?.status === 403) {
+        alert("You are not a member of this room");
+        navigate('/home');
+      } else if (error.response?.status === 404) {
+        alert("Room not found");
+        navigate('/home');
+      } else {
+        alert("Failed to load room files");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchRoomData();
-  }, [id, navigate]);
+  fetchRoomData();
+}, [id, navigate]); // Removed dependencies that shouldn't trigger re-fetch
 
   // Load a specific file
   const loadFile = async (fileId) => {
     try {
-      const response = await axiosInstance.get(`/api/v1/files/${fileId}`);
+      const response = await axiosInstance.get(`/files/${fileId}`);
       
       const file = response.data.data.file;
       setCurrentFileId(file._id);
@@ -161,8 +169,8 @@ const RoomPage = () => {
     setSaveStatus("saving");
 
     try {
-      const response = await axios.patch(
-        '/api/v1/files/save',
+      const response = await axiosInstance.patch(
+        '/files/save',
         {
           fileId: currentFileId,
           contents: code

@@ -6,7 +6,7 @@ import {
     createFile,
     deleteFile
 } from "../controllers/file.controller.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const router = Router();
 

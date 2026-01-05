@@ -96,7 +96,8 @@ const getRoomFiles = asyncHandler(async(req, res) => {
 
 const getFileContents = asyncHandler(async (req, res) => {
     const { fileId } = req.params;
-
+    console.log("Searching for File ID:", fileId);
+    
     if (!mongoose.Types.ObjectId.isValid(fileId)) {
         throw new ApiError(400, "Invalid file ID format");
     }
