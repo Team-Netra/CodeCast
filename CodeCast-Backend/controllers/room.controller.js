@@ -101,14 +101,34 @@ const createroom = asyncHandler(async (req, res) => {
         // const user = await User.findOne({ userid })
         password = password.trim()
 
-        const newroom = await Room.create({ cc_pin, name, password, admins: [user._id] })
+        const newroom = await Room.create({ cc_pin, name, password, admins: [user._id], directories: [] })
+        // Added directories in each room
         // console.log(password.length)
+        // Create a default file for the room
+        const defaultFile = await File.create({
+            filename: "index",
+            extension: "js",
+            contents: "// Welcome to your coding room!\n// Start coding here...\n",
+            room: newroom._id,
+            lastSavedBy: user._id,
+            lastSavedAt: new Date()
+        });
+        // Add file to room
+        newroom.directories.push(defaultFile._id);
+        await newroom.save({ validateBeforeSave: false });
+
         user.rooms.push(newroom._id)
-        await user.save()
+        await user.save({ validateBeforeSave: false});
 
         // return { success: true, roomId: newroom._id }
 
-        return res.status(200).json(new ApiResponse(200, {}, "database-successfully created a room"))
+        return res.status(200).json(
+            new ApiResponse(200,
+                {roomId: newroom._id,
+                defaultFileId: defaultFile._id 
+            }, 
+            "Room and default file created successfully"))
+            
     } catch (error) {
         console.log("Error is creating a room", error)
         // return { success: false, error: error.message }
