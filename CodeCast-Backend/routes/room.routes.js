@@ -6,5 +6,6 @@ const router = Router()
 
 router.route('/create-room').post(verifyJWT,createroom)
 router.route('/addUserToRoom').post(verifyJWT,addusertoroom)
+router.route('/by-pin/:cc_pin').get(verifyJWT, getRoomByPin)
 
 export default router
