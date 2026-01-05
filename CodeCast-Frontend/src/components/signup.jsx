@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import useApi from "../hooks/useApi.js";
 import {
@@ -33,11 +32,6 @@ const SignupPage = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const togglePasswordVisibility = (field) => {
-    if (field === "password") setShowPassword(!showPassword);
-    else if (field === "confirmPassword") setShowConfirmPassword(!showConfirmPassword);
-  };
-
   const handleSignup = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
@@ -56,10 +50,7 @@ const SignupPage = () => {
 
     api.post('/users/register', signup_data)
       .then((res) => {
-        console.log(res.data);
-        console.log(res.status);
         if (res.status === 200 || res.status === 201) {
-          console.log("Successsss !!!")
           navigate("/home"); // Navigate to HomePage after signup
         }
       })
@@ -70,26 +61,7 @@ const SignupPage = () => {
           console.error("Signup failed:", error);
           alert("Signup failed. Please try again later.");
         }
-      })
-
-    // axios
-    //   .post("http://localhost:5000/users/register", signup_data ,{ withCredentials: true })
-    //   .then((res) => {
-    //     console.log(res.data);
-    //     console.log(res.status);
-    //     if (res.status === 200 || res.status === 201) {
-    //       console.log("Successsss !!!")
-    //       navigate("/home"); // Navigate to HomePage after signup
-    //     }
-    //   })
-    //   .catch((error) => {
-    //     if (error.response && error.response.status === 409) {
-    //       alert("This email is already registered. Please log in or use a different email.");
-    //     } else {
-    //       console.error("Signup failed:", error);
-    //       alert("Signup failed. Please try again later.");
-    //     }
-    //   });      
+      });
   };
 
   return (
@@ -140,6 +112,7 @@ const SignupPage = () => {
             value={formData.fullName}
             onChange={handleChange}
           />
+
           <TextField
             name="email"
             label="Email"
@@ -158,6 +131,8 @@ const SignupPage = () => {
             value={formData.email}
             onChange={handleChange}
           />
+
+          {/* Password Field */}
           <TextField
             name="password"
             label="Password"
@@ -178,7 +153,8 @@ const SignupPage = () => {
               endAdornment: (
                 <InputAdornment position="end">
                   <Button
-                    onClick={() => togglePasswordVisibility("password")}
+                    onMouseEnter={() => setShowPassword(true)}
+                    onMouseLeave={() => setShowPassword(false)}
                     sx={{
                       minWidth: 0,
                       p: 0,
@@ -195,6 +171,8 @@ const SignupPage = () => {
             value={formData.password}
             onChange={handleChange}
           />
+
+          {/* Confirm Password Field */}
           <TextField
             name="confirmPassword"
             label="Confirm Password"
@@ -215,7 +193,8 @@ const SignupPage = () => {
               endAdornment: (
                 <InputAdornment position="end">
                   <Button
-                    onClick={() => togglePasswordVisibility("confirmPassword")}
+                    onMouseEnter={() => setShowConfirmPassword(true)}
+                    onMouseLeave={() => setShowConfirmPassword(false)}
                     sx={{
                       minWidth: 0,
                       p: 0,
