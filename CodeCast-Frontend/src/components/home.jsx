@@ -6,7 +6,10 @@ import AddIcon from '@mui/icons-material/Add';
 import socket from "../api/socket.js"
 import logo from "../assets/logo.svg"
 import useApi from "../hooks/useApi.js";
+import { useNavigate } from "react-router-dom";
+
 const HomePage = () => {
+  const navigate = useNavigate();
   const [openPopup, setOpenPopup] = useState(false);
   const [openPop, setOpenPop] = useState(false);
   const [roomUrl, setRoomUrl] = useState("");
@@ -96,6 +99,7 @@ const HomePage = () => {
     }).then((res) => {
       console.log(res);
       if (res.status == 200 || res.status == 201) {
+        const confirmedPin = res.data.data.cc_pin
         console.log("Room successfully created, the user can navigate")
         setPassword("");
         setcc_pin("")
@@ -103,9 +107,11 @@ const HomePage = () => {
         setRoomUrl(url);
         setOpenPopup(false);
         localStorage.setItem("creater", true)
+
         if (url) {
           console.log("hiii")
-          window.open(url, "_blank");
+          // window.open(url, "_blank");
+          navigate(`/room/${confirmedPin}`);
         }
 
       }
