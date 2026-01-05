@@ -196,7 +196,7 @@ const LoginPage = () => {
           </Box>
 
           {loginError && (
-            <p style={{ color: "red", fontSize: "17px", marginTop: "5px", fontWeight: "bold", textAlign: "left"}}>
+            <p style={{ color: "orange", fontSize: "17px", marginTop: "5px", textAlign: "left"}}>
               {loginError}
             </p>
           )}
