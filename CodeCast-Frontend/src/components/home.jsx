@@ -42,7 +42,7 @@ const HomePage = () => {
           console.log("Room credentials coorect, the user can navigate")
           const url = `${window.location.origin}/room/${cc_pin}`; // Construct the full URL
           setRoomUrl(url);
-          localStorage.setItem("creater", false)
+          // localStorage.setItem("creater", false)
 
           setOpenPopup(false);
           if (url) {
@@ -102,7 +102,7 @@ const HomePage = () => {
         const url = `${window.location.origin}/room/${cc_pin}`;
         setRoomUrl(url);
         setOpenPopup(false);
-        localStorage.setItem("creater", true)
+        // localStorage.setItem("creater", true)
         if (url) {
           console.log("hiii")
           window.open(url, "_blank");

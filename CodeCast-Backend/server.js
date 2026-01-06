@@ -9,9 +9,11 @@ import { verifyJWT } from "./middleware/auth.middleware.js";
 import cookie from "cookie"
 import { createroom, addusertoroom } from "./controllers/room.controller.js";
 import jwt from "jsonwebtoken"
-
+import { User } from "./models/userModel.js";
 import userRouter from "./routes/user.routes.js";
 import roomRouter from "./routes/room.routes.js"
+import { ApiError } from "./utils/ApiError.js";
+import { Room } from "./models/roomModel.js";
 // import { Socket } from "node:dgram";
 
 
@@ -45,6 +47,40 @@ const io = new Server(server, {
 
     }
 })
+io.use(async (socket, next) => {
+    try {
+        const cookieheader = socket.handshake.headers.cookie;
+        if (!cookieheader) {
+            throw new ApiError(401, "Unauthorized request")
+        }
+        const cookies = cookie.parse(cookieheader);
+        const token = cookies.accessToken;
+
+        if (!token) {
+            throw new ApiError(401, "Access token missing");
+        }
+
+        const decodedToken = jwt.verify(
+            token,
+            process.env.ACCESS_TOKEN_SECRET
+        );
+        const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
+        if (!user) {
+            throw new ApiError(401, "Invalid Access Token")
+        }
+
+        socket.user = user;
+        next()
+    } catch (err) {
+        const socketError = new Error(err.message);
+        socketError.data = {
+            statusCode: err.statusCode || 500,
+            errors: err.errors || []
+        };
+
+        next(socketError);
+    }
+})
 DBConnection()
     .then(() => {
         // app.listen(port, () => {
@@ -62,11 +98,11 @@ DBConnection()
         // })
 
         io.on("connection", (socket) => {
-            console.log("user connected", socket.id)
-            let rawcookies = {};
-            if (socket.handshake.headers['cookie']) {
-                rawcookies = cookie.parse(socket.handshake.headers['cookie'])
-            }
+            console.log("user connected", socket.id, socket.user)
+            // let rawcookies = {};
+            // if (socket.handshake.headers['cookie']) {
+            //     rawcookies = cookie.parse(socket.handshake.headers['cookie'])
+            // }
             // console.log(rawcookies)
 
             // const accessToken = cookies.accessToken
@@ -76,35 +112,83 @@ DBConnection()
             socket.on('join_room', async (data) => {
                 console.log(data)
                 try {
-                    console.log("hii");
-                    const decodedToken = jwt.verify(rawcookies.accessToken, process.env.ACCESS_TOKEN_SECRET)
-                    console.log("byee");
-                    
-                    if (!data.cc_pin) {
-                        socket.emit('user_error', { error: "cc_pin is required" })
+                    // console.log("hii");
+                    // const decodedToken = jwt.verify(rawcookies.accessToken, process.env.ACCESS_TOKEN_SECRET)
+                    // console.log("byee");
 
+                    //here we need to check if the 
+                    // cc_pin room exists 
+                    // then if the userid is in the the rooms list of members if not then they cannot do a direct socket connection
+                    if (!data?.cc_pin) {
+                        throw new ApiError(400, "cc_pin is required");
                     }
-                    if (!decodedToken) {
-                        socket.emit('user_error', { error: "Unable to verify jwt" })
+                    // if (!decodedToken) {
+                    //     socket.emit('user_error', { error: "Unable to verify jwt" })
+                    // }
+                    const room = await Room.findOne({ cc_pin: data.cc_pin })
+                    if (!room) {
+                        throw new ApiError(404, "Room not found")
                     }
+                    const isAdmin = room.admins.some(
+                        adminId => adminId.equals(socket.user._id)
+                    );
+                    const isparticipant = room.participants.some(
+                        partiID => partiID.equals(socket.user._id)
+                    )
+                    if (!isparticipant && !isAdmin) {
+                        throw new ApiError(402, "User not part of the room")
+                    }
+                    console.log(isAdmin,isparticipant)
+
                     socket.join(data.cc_pin)
+                    // console.log("user joined")
                     // emit and on 111
                     console.log("user joined room", data.cc_pin);
-                    socket.emit('user_joined')
-                    socket.to(data.cc_pin).emit('code', { code: data.code })
-                } catch (error) {
-                    console.log(error)
-                    socket.emit('user_error', { error: error })
+                    // socket.emit('user_joined')
+                    socket.emit("role", { isCreator: isAdmin })
+                    //todo emit the stored code to the new user 
+                    // socket.to(data.cc_pin).emit('code', { code: data.code })
+                } catch (err) {
+                    socket.emit('user_error', {
+                        error: err.message || "Internal Server error",
+                        message: err.message || "Internal Server error",
+                        statusCode: err.statusCode || 500
+                    })
                 }
             })
-            socket.on('code_message', (data) => {
-                console.log("code got", data)
-                const usersInRoom = io.sockets.adapter.rooms.get(data.cc_pin);
-                console.log("users in room", usersInRoom, "cc_pin", data.cc_pin)
-                socket.to(data.cc_pin).emit('code', { code: data.code })
+            socket.on('code_message', async (data) => {
+                //we need to check if the user is the admin in the room so now we have the cc_pin we can do a query to get the room details and see if the userid we got is the admin is yes then we can continue otherwise we need to error is out 
+                try {
+                    if (!data?.cc_pin || typeof data.code !== "string") {
+                        throw new ApiError(400, "Invalid payload");
+                    }
+                    const room = await Room.findOne({ cc_pin: data.cc_pin })
+                    if (!room) {
+                        throw new ApiError(404, "Room not found")
+                    }
+                    // console.log(room);
+                    const isAdmin = room.admins.some(
+                        adminId => adminId.equals(socket.user._id)
+                    );
+                    if (isAdmin) {
+                        console.log("code got", data)
+                        const usersInRoom = io.sockets.adapter.rooms.get(data.cc_pin);
+                        console.log("users in room", usersInRoom, "cc_pin", data.cc_pin)
+                        socket.to(data.cc_pin).emit('code', { code: data.code })
+                    } else {
+                        console.log("not the creator")
+                        throw new ApiError(401, "User is not the creator")
+                    }
+                } catch (err) {
+                    socket.emit('user_error', {
+                        error: err.message || "Internal Server error",
+                        message: err.message || "Internal Server error",
+                        statusCode: err.statusCode || 500
+                    })
+                }
             })
-            socket.on('disconnect',()=>{
-                console.log("User Disconnected",socket.id)
+            socket.on('disconnect', () => {
+                console.log("User Disconnected", socket.id)
             })
         })
 
