@@ -29,34 +29,43 @@ const RoomPage = () => {
 
   useEffect(() => {
     socket.emit('join_room', { cc_pin: id })
-    socket.on('user_joined', () => {
-      console.log("User successfully joined the room")
-    })
+    // socket.on('role', () => {
+    //   console.log("User successfully joined the room")
+    // })
+    socket.on("role", (data) => {
+      console.log(data)
+      setisCreater(data.isCreator);
+    });
     socket.on('user_error', (data) => {
       console.log("User could not join the room", data)
     })
-    setisCreater(localStorage.getItem("creater") === "true")
+    // setisCreater(localStorage.getItem("creater") === "true")
     console.log("are you the creater?", iscreater)
-  }, [])
+    return () => {
+      socket.off("role");
+      socket.off("user_error");
+    };
+  }, [id])
 
   useEffect(() => {
     //if the user is the creater then only send the message
     // console.log("is still the creater but am i sending the message i need to?",iscreater)
-    if (iscreater) {
+    if (!iscreater) return
       // console.log("message sent")
       socket.emit('code_message', { code: code, cc_pin: id })
-    }
+    
   }, [code])
 
   useEffect(() => {
-    if (!iscreater) {
-      // console.log("reciveingggg code,hi")
+    console.log("hello")
+    if (!iscreater){
+      console.log("reciveingggg code,hi")
       socket.on('code', (data) => {
         setCode(data.code)
-        // console.log("code recived", data)
+        console.log("code recived", data)
       })
-    }
-  }, [socket])
+  }
+  }, [code, iscreater,id])
 
   // return (
   //   <Box sx={{
@@ -119,6 +128,7 @@ const RoomPage = () => {
         width="100%"
         theme={oneDark}
         extensions={[language]}
+        readOnly={!iscreater}
         onChange={(value) => setCode(value)}
         className="left-align-editor"
       />

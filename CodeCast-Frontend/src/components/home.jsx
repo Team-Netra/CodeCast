@@ -90,7 +90,7 @@ Click the link to join and collaborate in real time.`;
           console.log("Room credentials coorect, the user can navigate")
           const url = `${window.location.origin}/room/${cc_pin}`; // Construct the full URL
           setRoomUrl(url);
-          localStorage.setItem("creater", false)
+          // localStorage.setItem("creater", false)
 
           setOpenPopup(false);
           if (url) {
@@ -135,7 +135,7 @@ Click the link to join and collaborate in real time.`;
         setcc_pin("");
         setRoomUrl(url);
         setOpenPopup(false);
-        localStorage.setItem("creater", true)
+        // localStorage.setItem("creater", true)
         if (url) {
           window.open(url, "_blank"); //to open in another web page
           // window.location.href = url; //to open in the same tab

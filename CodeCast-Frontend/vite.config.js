@@ -8,7 +8,6 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     allowedHosts: ['a4a4-138-199-53-244.ngrok-free.app'],
-    //commented for local dev
     // hmr: {
     //   clientPort: 443       // Tells HMR to use HTTPS port
     // }
