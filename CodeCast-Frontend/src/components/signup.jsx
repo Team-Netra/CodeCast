@@ -19,6 +19,7 @@ const SignupPage = () => {
   const api = useApi();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -28,22 +29,65 @@ const SignupPage = () => {
 
   const navigate = useNavigate(); // Hook for navigation
 
+  const [errors, setErrors] = useState({}); //inline error messages
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    setErrors((prev) => ({ ...prev, [name]: "", form: "" }));
   };
 
   const togglePasswordVisibility = (field) => {
-    if (field === "password") setShowPassword(!showPassword);
-    else if (field === "confirmPassword") setShowConfirmPassword(!showConfirmPassword);
+  if (field === "password") setShowPassword((prev) => !prev);
+  else if (field === "confirmPassword") setShowConfirmPassword((prev) => !prev);
   };
 
   const handleSignup = (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+
+    const newErrors = {};
+
+    //Name validation
+    if (!formData.fullName.trim()) {
+    newErrors.fullName = "Full name is required";
+    }
+
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    // Password validation (emptiness)
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    }
+
+    // Confirm password validation (emptiness)
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Confirm password is required";
+    }
+
+    // Password match validation (only if both exist)
+    if (
+      formData.password &&
+      formData.confirmPassword &&
+      formData.password !== formData.confirmPassword
+    ) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    // Terms & conditions validation
+    if (!agreeToTerms) {
+    newErrors.terms = "You must agree to the terms and conditions";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+
     signup();
   };
 
@@ -52,6 +96,7 @@ const SignupPage = () => {
       name: formData.fullName,
       email: formData.email,
       password: formData.password,
+      confirmPassword: formData.confirmPassword,
     };
 
     api.post('/users/register', signup_data)
@@ -65,10 +110,10 @@ const SignupPage = () => {
       })
       .catch((error) => {
         if (error.response && error.response.status === 409) {
-          alert("This email is already registered. Please log in or use a different email.");
+          setErrors({ email: "This email is already registered" });
         } else {
           console.error("Signup failed:", error);
-          alert("Signup failed. Please try again later.");
+          setErrors({ form: "Signup failed. Please try again later." });
         }
       })
 
@@ -134,11 +179,28 @@ const SignupPage = () => {
                 "& fieldset": { borderColor: "rgba(86, 86, 86, 1)" },
                 "&:hover fieldset": { borderColor: "white" },
               },
+              "& .MuiOutlinedInput-root.Mui-error fieldset": {
+                borderColor: "rgba(86, 86, 86, 1)",
+              },
+              "& .MuiInputLabel-root.Mui-error": {
+                color: "rgba(86, 86, 86, 1)",
+              },
             }}
             margin="normal"
             variant="outlined"
             value={formData.fullName}
             onChange={handleChange}
+            error={!!errors.fullName}          
+            helperText={errors.fullName}
+            slotProps={{
+              formHelperText: {
+                sx: {
+                  "&.Mui-error": {
+                    color: "#FF9800",
+                  },
+                },
+              },
+            }}
           />
           <TextField
             name="email"
@@ -152,11 +214,28 @@ const SignupPage = () => {
                 "& fieldset": { borderColor: "rgba(86, 86, 86, 1)" },
                 "&:hover fieldset": { borderColor: "white" },
               },
+              "& .MuiOutlinedInput-root.Mui-error fieldset": {
+                borderColor: "rgba(86, 86, 86, 1)",
+              },
+              "& .MuiInputLabel-root.Mui-error": {
+                color: "rgba(86, 86, 86, 1)",
+              },
             }}
             margin="normal"
             variant="outlined"
             value={formData.email}
             onChange={handleChange}
+            error={!!errors.email}
+            helperText={errors.email}
+            slotProps={{
+              formHelperText: {
+                sx: {
+                  "&.Mui-error": {
+                    color: "#FF9800",
+                  },
+                },
+              },
+            }}
           />
           <TextField
             name="password"
@@ -171,6 +250,12 @@ const SignupPage = () => {
                 "& fieldset": { borderColor: "rgba(86, 86, 86, 1)" },
                 "&:hover fieldset": { borderColor: "white" },
               },
+              "& .MuiOutlinedInput-root.Mui-error fieldset": {
+                borderColor: "rgba(86, 86, 86, 1)",
+              },
+              "& .MuiInputLabel-root.Mui-error": {
+                color: "rgba(86, 86, 86, 1)",
+              },
             }}
             margin="normal"
             variant="outlined"
@@ -178,6 +263,7 @@ const SignupPage = () => {
               endAdornment: (
                 <InputAdornment position="end">
                   <Button
+                    type="button"
                     onClick={() => togglePasswordVisibility("password")}
                     sx={{
                       minWidth: 0,
@@ -194,6 +280,17 @@ const SignupPage = () => {
             }}
             value={formData.password}
             onChange={handleChange}
+            error={!!errors.password}
+            helperText={errors.password}
+            slotProps={{
+              formHelperText: {
+                sx: {
+                  "&.Mui-error": {
+                    color: "#FF9800",
+                  },
+                },
+              },
+            }}
           />
           <TextField
             name="confirmPassword"
@@ -208,6 +305,12 @@ const SignupPage = () => {
                 "& fieldset": { borderColor: "rgba(86, 86, 86, 1)" },
                 "&:hover fieldset": { borderColor: "white" },
               },
+              "& .MuiOutlinedInput-root.Mui-error fieldset": {
+                borderColor: "rgba(86, 86, 86, 1)",
+              },
+              "& .MuiInputLabel-root.Mui-error": {
+                color: "rgba(86, 86, 86, 1)",
+              },
             }}
             margin="normal"
             variant="outlined"
@@ -215,6 +318,7 @@ const SignupPage = () => {
               endAdornment: (
                 <InputAdornment position="end">
                   <Button
+                    type="button"
                     onClick={() => togglePasswordVisibility("confirmPassword")}
                     sx={{
                       minWidth: 0,
@@ -231,10 +335,27 @@ const SignupPage = () => {
             }}
             value={formData.confirmPassword}
             onChange={handleChange}
+            error={!!errors.confirmPassword} 
+            helperText={errors.confirmPassword}
+            slotProps={{
+              formHelperText: {
+                sx: {
+                  "&.Mui-error": {
+                    color: "#FF9800",
+                  },
+                },
+              },
+            }}
           />
 
           <FormControlLabel
-            control={<Checkbox sx={{ color: "rgba(165, 14, 178, 1)" }} />}
+            control={<Checkbox 
+              checked={agreeToTerms}
+              onChange={(e) => {
+                setAgreeToTerms(e.target.checked);
+                setErrors((prev) => ({ ...prev, terms: "" }));
+              }}
+              sx={{ color: "rgba(165, 14, 178, 1)" }} />}
             label={
               <>
                 I Agree with{" "}
@@ -249,6 +370,12 @@ const SignupPage = () => {
             }
             sx={{ mt: 2 }}
           />
+
+          {errors.terms && (
+            <Typography variant="body2" sx={{ color: "#FF9800", mt: 2 }}>
+              {errors.terms}
+            </Typography>
+          )}
 
           <Button
             type="submit"

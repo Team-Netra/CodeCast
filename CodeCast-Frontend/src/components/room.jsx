@@ -187,19 +187,24 @@ const RoomPage = () => {
 
   useEffect(() => {
     socket.emit('join_room', { cc_pin: id })
-    socket.on('user_joined', () => {
-      console.log("User successfully joined the room")
-    })
+    // socket.on('role', () => {
+    //   console.log("User successfully joined the room")
+    // })
+    socket.on("role", (data) => {
+      console.log(data)
+      setisCreater(data.isCreator);
+    });
     socket.on('user_error', (data) => {
       console.log("User could not join the room", data)
     })
-    setisCreater(localStorage.getItem("creater") === "true")
+    // setisCreater(localStorage.getItem("creater") === "true")
     console.log("are you the creater?", iscreater)
 
     return () => {
       socket.off('user_joined');
       socket.off('user_error');
       socket.off('code');
+      socket.off("role");
     };
   }, [id])
 
