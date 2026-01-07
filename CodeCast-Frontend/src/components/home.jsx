@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { Box, Typography, IconButton, Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions, InputAdornment, Fade } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { Box, Typography, IconButton, Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions, InputAdornment, Fade, Avatar, Tooltip } from "@mui/material";
 
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import SettingsIcon from '@mui/icons-material/Settings';
+import TuneIcon from '@mui/icons-material/Tune';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'; 
 import Visibility from '@mui/icons-material/Visibility';       
@@ -24,6 +23,18 @@ const HomePage = () => {
   const [copySuccess, setCopySuccess] = useState(false);
 
   const api = useApi();
+  const [fullName, setFullName] = useState(() => {
+    return localStorage.getItem("name") || "Guest";
+  });
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setFullName(localStorage.getItem("name") || "Guest");
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const userInitial = fullName.charAt(0).toUpperCase();
 
   const handleOpenCreate = () => {
     setcc_pin(""); 
@@ -50,7 +61,6 @@ const HomePage = () => {
   };
 
   const handleCopyDetails = () => {
-    // 1. Define the professional message
     const message = `Join my CodeCast Room for a live collaborative coding session!
 
 Room Details:
@@ -202,13 +212,30 @@ Click the link to join and collaborate in real time.`;
         <img src={logo} alt="CodeCast" style={{ height: 45 }} />
 
         {/* Right side icons */}
-        <Box>
-           <IconButton sx={{ color: "white", marginRight: 1 }}>
-             <SettingsIcon sx={{ fontSize: 32 }} />
-           </IconButton>
-           <IconButton sx={{ color: "white" }}>
-             <AccountCircleIcon sx={{ fontSize: 32 }} />
-           </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+           
+           <Tooltip title="Settings">
+              <IconButton sx={{ color: "#aaa", "&:hover": { color: "white" } }}>
+                <TuneIcon sx={{ fontSize: 28 }} />
+              </IconButton>
+           </Tooltip>
+
+           {/* User Avatar with Automatic Initial from 'name' */}
+           <Tooltip title={`Profile: ${fullName}`}>
+              <IconButton sx={{ padding: 0, marginLeft: 1 }}>
+                <Avatar 
+                  sx={{ 
+                    bgcolor: "#d500f9", 
+                    width: 35, 
+                    height: 35,
+                    fontSize: "1rem",
+                    fontWeight: "bold"
+                  }}
+                >
+                  {userInitial} 
+                </Avatar>
+              </IconButton>
+           </Tooltip>
         </Box>
       </Box>
 
