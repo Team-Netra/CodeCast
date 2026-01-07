@@ -66,13 +66,18 @@ const registerUser = asyncHandler(async (req, res) => {
     // return res
     // console.log("hiii")
     console.log("registering ")
-    const { name, email, password } = req.body
+    const { name, email, password, confirmPassword } = req.body
     console.log("email: ", email);
 
     if (
         [name, email, password].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are required")
+    }
+
+    //password/confirmPassword validation
+    if (password !== confirmPassword) {
+    throw new ApiError(400, "Passwords do not match")
     }
 
     const existedUser = await User.findOne({ email })
