@@ -178,6 +178,7 @@ const SignupPage = () => {
               endAdornment: (
                 <InputAdornment position="end">
                   <Button
+                    type="button"
                     onClick={() => togglePasswordVisibility("password")}
                     sx={{
                       minWidth: 0,
@@ -215,6 +216,7 @@ const SignupPage = () => {
               endAdornment: (
                 <InputAdornment position="end">
                   <Button
+                    type="button"
                     onClick={() => togglePasswordVisibility("confirmPassword")}
                     sx={{
                       minWidth: 0,
