@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/userModel.js"
 import { Room } from "../models/roomModel.js"
+import { File } from "../models/fileModel.js"
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken"
 
@@ -81,7 +82,7 @@ const createroom = asyncHandler(async (req, res) => {
     try {
         //if name is not sent then it will be set to default
         console.log("creating the room")
-        let { cc_pin, password, name="defalut" } = req.body
+        let { cc_pin, password, name="default" } = req.body
         if(!cc_pin){
             throw new ApiError(400,"cc_pin is required");
         }
@@ -101,21 +102,45 @@ const createroom = asyncHandler(async (req, res) => {
         // const user = await User.findOne({ userid })
         password = password.trim()
 
-        const newroom = await Room.create({ cc_pin, name, password, admins: [user._id] })
+        const newroom = await Room.create({ cc_pin, name, password, admins: [user._id], directories: [] })
+        // Added directories in each room
         // console.log(password.length)
+
+        // Create a default file for the room
+        const defaultFile = await File.create({
+            filename: "index",
+            extension: "js",
+            contents: "// Welcome to your coding room!\n// Start coding here...\n",
+            room: newroom._id,
+            lastSavedBy: user._id,
+            lastSavedAt: new Date()
+        });
+
+        // Add file to room
+        newroom.directories.push(defaultFile._id);
+        await newroom.save({ validateBeforeSave: false });
+
         user.rooms.push(newroom._id)
-        await user.save()
+        await user.save({ validateBeforeSave: false});
 
         // return { success: true, roomId: newroom._id }
 
-        return res.status(200).json(new ApiResponse(200, {}, "database-successfully created a room"))
+        return res.status(200).json(
+            new ApiResponse(200,
+                {roomId: newroom._id,
+                cc_pin: newroom.cc_pin,
+                defaultFileId: defaultFile._id 
+            }, 
+            "Room and default file created successfully"))
+
     } catch (error) {
         console.log("Error is creating a room", error)
         // return { success: false, error: error.message }
-        throw new ApiError(500,"Somethign went wrong when creating the room")
+        throw new ApiError(500,"Something went wrong when creating the room")
     }
 })
 
+//Added ccpin to the response since we need to get room using ccpin for saving code
 const addusertoroom = asyncHandler(async (req,res) => {
     try {
         //add the user to the list of participents
@@ -150,7 +175,7 @@ const addusertoroom = asyncHandler(async (req,res) => {
         await room.save()
         await user.save()
         // return { success: true, roomId: room._id }
-        return res.status(200).json(new ApiResponse(200,{},"database-User added to room"))
+        return res.status(200).json(new ApiResponse(200,{cc_pin: room.cc_pin},"database-User added to room"))
     } catch (error) {
         console.log("Error occured during adding user to room", error)
         // return { success: false, error: error.message }
@@ -158,4 +183,30 @@ const addusertoroom = asyncHandler(async (req,res) => {
     }
 })
 
-export { createroom, addusertoroom }
+// Get room by cc_pin
+const getRoomByPin = asyncHandler(async (req, res) => {
+    const { cc_pin } = req.params;
+
+    const room = await Room.findOne({ cc_pin })
+        .select('_id name cc_pin admins participants')
+        .populate('admins', 'name email')
+        .populate('participants', 'name email');
+
+    if (!room) {
+        throw new ApiError(404, "Room not found");
+    }
+
+    // Check if user is part of the room
+    const isMember =
+        room.admins.some(admin => admin._id.toString() === req.user._id.toString()) ||
+        room.participants.some(participant => participant._id.toString() === req.user._id.toString());
+
+    if (!isMember) {
+        throw new ApiError(403, "Unauthorized: You are not a member of this room");
+    }
+    return res.status(200).json(
+        new ApiResponse(200, room, "Room fetched successfully")
+    );
+});
+
+export { createroom, addusertoroom, getRoomByPin }

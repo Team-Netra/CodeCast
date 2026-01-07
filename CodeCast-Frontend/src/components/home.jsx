@@ -12,9 +12,12 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import socket from "../api/socket.js"
 import logo from "../assets/logo.svg"
 import useApi from "../hooks/useApi.js";
+import { useNavigate } from "react-router-dom";
+
 const HomePage = () => {
-  const [openPopup, setOpenPopup] = useState(false); //Create Modal
-  const [openPop, setOpenPop] = useState(false); //Join Modal
+  const navigate = useNavigate();
+  const [openPopup, setOpenPopup] = useState(false);
+  const [openPop, setOpenPop] = useState(false);
   const [roomUrl, setRoomUrl] = useState("");
   const [cc_pin, setcc_pin] = useState("");
   const [password, setPassword] = useState("");
@@ -128,6 +131,8 @@ Click the link to join and collaborate in real time.`;
     }).then((res) => {
       console.log(res);
       if (res.status == 200 || res.status == 201) {
+        const confirmedPin = res.data.data.cc_pin
+  
         console.log("Room successfully created, the user can navigate");
         const url = `${window.location.origin}/room/${currentPin}`;
 
@@ -135,10 +140,12 @@ Click the link to join and collaborate in real time.`;
         setcc_pin("");
         setRoomUrl(url);
         setOpenPopup(false);
-        // localStorage.setItem("creater", true)
+        localStorage.setItem("creater", true)
+
         if (url) {
-          window.open(url, "_blank"); //to open in another web page
-          // window.location.href = url; //to open in the same tab
+          console.log("hiii")
+          // window.open(url, "_blank");
+          navigate(`/room/${confirmedPin}`);
         }
 
       }

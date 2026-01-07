@@ -13,9 +13,24 @@ const fileSchema = mongoose.Schema(
         },
         contents: {
             type:String,
-            required:true,
-        }
+            default: "", //Starting with empty file
+        },
+    room: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Room",
+        required: true,
     },
-    {timestamps:true});
+    lastSavedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    },
+    lastSavedAt: {
+        type: Date,
+    }
+},
+    {timestamps:true}
+);
+
+fileSchema.index({room: 1}); //Added index on rooms in ascending for faster lookups
 
 export const File = mongoose.model("File" , fileSchema);
