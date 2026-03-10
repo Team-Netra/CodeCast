@@ -208,8 +208,13 @@ const RoomPage = () => {
     };
   }, [id])
 
+   useEffect(() => {
+      console.log("iscreater changed to:", iscreater)
+  }, [iscreater])
+
   useEffect(() => {
     if (iscreater && currentFileId) {
+      console.log("Emitting code msg");
       socket.emit('code_message', { code: code, cc_pin: id, fileId: currentFileId })
     }
   }, [code, iscreater, id, currentFileId])
@@ -217,7 +222,11 @@ const RoomPage = () => {
   useEffect(() => {
     if (!iscreater) {
       const handleCodeUpdate = (data) => {
+        console.log(data.code, "before if lol");
+        console.log(data.fileId,data, currentFileId)
+        console.log(data.fileId === currentFileId)
         if (data.fileId === currentFileId) {
+          console.log(data.code, "handling code update")
           setCode(data.code);
         }
       };
