@@ -1,10 +1,10 @@
 import { io } from "socket.io-client";
 
 const SERVER = "http://localhost:5000";
-const ROOM_PIN = "82kya3ya"; // create a room, paste the pin
-const VIEWER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OWFmY2JjMDI3MDhhMTRiYWJhZjdjNjQiLCJlbWFpbCI6Im5pa2tpQGdtYWlsLmNvbSIsIm5hbWUiOiJuaWtraSIsImlhdCI6MTc3MzEyODY0MCwiZXhwIjoxNzczMjE1MDQwfQ.giWw7hefjXgVu4o2knytQERwG-uQqF1iUNJCuWcSY10"
+const ROOM_PIN = "ROOM PIN HERE"; // create a room, paste the pin
+const VIEWER_TOKEN = "VIEWER TOKEN HERE"
 const BROADCAST_INTERVAL_MS = 300;
-const TEACHER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OWFmYTc3MGFkYjQ1NDE1YzVmZDJiMTIiLCJlbWFpbCI6Imthc2hpc2hAZ21haWwuY29tIiwibmFtZSI6Imthc2hpc2giLCJpYXQiOjE3NzMxMjA4MjQsImV4cCI6MTc3MzIwNzIyNH0.GGuhZMseEFQCD0LhWQXt5o_ezb1G03_oUrU-QWQbPd0"
+const TEACHER_TOKEN = "TEACHER TOKEN HERE"
 
 function makeViewer(id) {
   const socket = io(SERVER, {
