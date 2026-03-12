@@ -11,7 +11,7 @@ import { createroom, addusertoroom } from "./controllers/room.controller.js";
 import jwt from "jsonwebtoken"
 import { User } from "./models/userModel.js";
 import userRouter from "./routes/user.routes.js";
-import roomRouter from "./routes/room.routes.js";
+// import roomRouter from "./routes/room.routes.js";
 import fileRouter from "./routes/file.routes.js";
 import roomRouter from "./routes/room.routes.js"
 import { ApiError } from "./utils/ApiError.js";
@@ -174,10 +174,10 @@ DBConnection()
                         adminId => adminId.equals(socket.user._id)
                     );
                     if (isAdmin) {
-                        console.log("code got", data)
+                        console.log("code got", data)//!!!
                         const usersInRoom = io.sockets.adapter.rooms.get(data.cc_pin);
                         console.log("users in room", usersInRoom, "cc_pin", data.cc_pin)
-                        socket.to(data.cc_pin).emit('code', { code: data.code })
+                        socket.to(data.cc_pin).emit('code', { code: data.code, fileId: data.fileId })
                     } else {
                         console.log("not the creator")
                         throw new ApiError(401, "User is not the creator")
